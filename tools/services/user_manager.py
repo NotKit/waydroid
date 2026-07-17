@@ -116,7 +116,7 @@ def start(args, session, unlocked_cb=None):
 
         desktop_file.set_string("Desktop Entry", "Type", "Application")
         desktop_file.set_string("Desktop Entry", "Name", appInfo["name"])
-        desktop_file.set_string("Desktop Entry", "Exec", f"waydroid app launch {packageName}")
+        desktop_file.set_string("Desktop Entry", "Exec", f"waydroid app launch --wait {packageName}")
         desktop_file.set_string("Desktop Entry", "Icon", str(waydroid_data_icons_dir / f"{packageName}.png"))
         glib_key_file_prepend_string_list(desktop_file, "Desktop Entry", "Categories", ["X-WayDroid-App"])
         desktop_file.set_string_list("Desktop Entry", "X-Purism-FormFactor", ["Workstation", "Mobile"])

@@ -78,6 +78,25 @@ def maybeLaunchLater(args, launchNow):
         logging.error("Starting waydroid session")
         tools.actions.session_manager.start(args, launchNow, background=False)
 
+def waitWhileWindowOpen(args, packageName):
+    """Block while the app's window is open, so desktop shells can track
+    the app by the launcher process lifetime."""
+    prop = "waydroid.open." + packageName
+
+    def window_open():
+        try:
+            return tools.helpers.props.get(args, prop) == "1"
+        except dbus.DBusException:
+            return False
+
+    deadline = time.monotonic() + 60
+    while not window_open():
+        if time.monotonic() > deadline:
+            return
+        time.sleep(1)
+    while window_open():
+        time.sleep(2)
+
 def launch(args):
     def justLaunch():
         platformService = IPlatform.get_service(args)
@@ -95,6 +114,8 @@ def launch(args):
         else:
             logging.error("Failed to access IPlatform service")
     maybeLaunchLater(args, justLaunch)
+    if getattr(args, "wait", False):
+        waitWhileWindowOpen(args, args.PACKAGE)
 
 def list(args):
     try:
