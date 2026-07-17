@@ -68,6 +68,13 @@ def maybeLaunchLater(args, launchNow):
             logging.error("Failed to unfreeze container. Trying to launch anyways...")
         launchNow()
     except dbus.DBusException:
+        if tools.actions.session_manager.start_service(args):
+            try:
+                tools.helpers.ipc.DBusSessionService()
+                launchNow()
+                return
+            except dbus.DBusException:
+                logging.error("Session service started but is not reachable")
         logging.error("Starting waydroid session")
         tools.actions.session_manager.start(args, launchNow, background=False)
 

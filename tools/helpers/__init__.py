@@ -9,6 +9,7 @@ import tools.helpers.drivers
 import tools.helpers.mount
 import tools.helpers.http
 import tools.helpers.ipc
+import tools.helpers.notify
 import tools.helpers.gpu
 import tools.helpers.protocol
 import tools.helpers.version

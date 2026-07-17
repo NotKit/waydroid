@@ -4,8 +4,11 @@ import logging
 import os
 import signal
 import sys
+import shutil
+import subprocess
 import tools.config
 import tools.helpers.ipc
+import tools.helpers.notify
 from tools import services
 import dbus
 import dbus.service
@@ -42,6 +45,7 @@ def start(args, unlocked_cb=None, background=True):
         _name = dbus.service.BusName("id.waydro.Session", dbus.SessionBus(), do_not_queue=True)
     except dbus.exceptions.NameExistsException:
         logging.error("Session is already running")
+        tools.helpers.notify.sd_notify("READY=1")
         if unlocked_cb:
             unlocked_cb()
         return
@@ -104,12 +108,32 @@ def start(args, unlocked_cb=None, background=True):
             logging.error("WayDroid container is not listening")
         sys.exit(0)
 
-    services.user_manager.start(args, session, unlocked_cb)
+    def session_ready():
+        # Ready once Android can launch apps; "systemctl start" blocks until then
+        tools.helpers.notify.sd_notify("READY=1")
+        if unlocked_cb:
+            unlocked_cb()
+
+    services.user_manager.start(args, session, session_ready)
     services.clipboard_manager.start(args)
     services.notification_manager.start(args, session)
     service(args, mainloop)
 
+def start_service(args):
+    """Start the session via the systemd user service, so its lifetime is
+    not tied to the calling process. True once ready."""
+    if not shutil.which("systemctl"):
+        return False
+    try:
+        return subprocess.run(["systemctl", "--user", "start",
+                               "waydroid-session.service"],
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL).returncode == 0
+    except OSError:
+        return False
+
 def do_stop(args, looper):
+    tools.helpers.notify.sd_notify("STOPPING=1")
     services.user_manager.stop(args)
     services.clipboard_manager.stop(args)
     services.notification_manager.stop(args)

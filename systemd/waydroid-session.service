@@ -1,0 +1,13 @@
+[Unit]
+Description=Waydroid session
+# Stop with the graphical session; the Wayland socket is gone after logout.
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=notify
+NotifyAccess=main
+ExecStart=/usr/bin/waydroid session start
+# Ready is signalled once Android is up, which includes a container boot
+# on first start; allow for slow devices.
+TimeoutStartSec=3min
