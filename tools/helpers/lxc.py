@@ -174,6 +174,9 @@ def generate_nodes_lxc_config(args):
     if args.vendor_type != "MAINLINE":
         if not make_entry("/dev/hwbinder", "dev/host_hwbinder"):
             raise OSError('Binder node "hwbinder" of host not found')
+        # Host AIDL services are reached over this one; the image lists
+        # them in /system/etc/hostaidls.conf
+        make_entry("/dev/binder", "dev/host_binder")
         make_entry("/vendor", "vendor_extra", options="rbind,optional 0 0")
 
     # Necessary device nodes for adb
