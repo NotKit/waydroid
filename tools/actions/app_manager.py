@@ -75,8 +75,14 @@ def launch(args):
     def justLaunch():
         platformService = IPlatform.get_service(args)
         if platformService:
-            platformService.setprop("waydroid.active_apps", args.PACKAGE)
-            platformService.launchApp(args.PACKAGE)
+            shown = platformService.showApp(args.PACKAGE)
+            if shown is None:
+                # Image predates showApp: set the window mode ourselves
+                platformService.setprop("waydroid.active_apps", args.PACKAGE)
+                platformService.launchApp(args.PACKAGE)
+            elif not shown:
+                logging.error("Nothing to launch for " + args.PACKAGE)
+                return
             multiwin = platformService.getprop(
                 "persist.waydroid.multi_windows", "false")
             if multiwin == "false":
@@ -119,7 +125,9 @@ def showFullUI(args):
     def justShow():
         platformService = IPlatform.get_service(args)
         if platformService:
-            platformService.setprop("waydroid.active_apps", "Waydroid")
+            if platformService.showFullUI() is None:
+                # Image predates showFullUI: set the window mode ourselves
+                platformService.setprop("waydroid.active_apps", "Waydroid")
             platformService.settingsPutString(2, "policy_control", "null*")
             # HACK: Refresh display contents
             statusBarService = IStatusBarService.get_service(args)

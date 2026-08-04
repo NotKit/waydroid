@@ -22,6 +22,8 @@ TRANSACTION_settingsGetString = 10
 TRANSACTION_settingsPutInt = 11
 TRANSACTION_settingsGetInt = 12
 TRANSACTION_launchIntent = 13
+TRANSACTION_showApp = 14
+TRANSACTION_showFullUI = 15
 
 class IPlatform:
     def __init__(self, remote):
@@ -203,6 +205,47 @@ class IPlatform:
             else:
                 logging.error("Failed with code: {}".format(exception))
         return None
+
+    def showApp(self, arg1):
+        """Show an app: the image sets the window mode and launches it.
+
+        Returns True/False as the image answered, or None if the image is too
+        old to know the call -- callers then fall back to setting
+        waydroid.active_apps themselves and calling launchApp.
+        """
+        request = self.client.new_request()
+        request.append_string16(arg1)
+        reply, status = self.client.transact_sync_reply(
+            TRANSACTION_showApp, request)
+
+        # An image without showApp answers UNKNOWN_TRANSACTION, which lands here
+        if status:
+            return None
+
+        reader = reply.init_reader()
+        status, exception = reader.read_int32()
+        if exception != 0:
+            logging.error("Failed with code: {}".format(exception))
+            return False
+        status, ret = reader.read_int32()
+        return ret != 0
+
+    def showFullUI(self):
+        """Show the whole Android UI. True if the image handled it, None if it
+        is too old to know the call (see showApp)."""
+        request = self.client.new_request()
+        reply, status = self.client.transact_sync_reply(
+            TRANSACTION_showFullUI, request)
+
+        if status:
+            return None
+
+        reader = reply.init_reader()
+        status, exception = reader.read_int32()
+        if exception != 0:
+            logging.error("Failed with code: {}".format(exception))
+            return False
+        return True
 
     def getAppName(self, arg1):
         request = self.client.new_request()
